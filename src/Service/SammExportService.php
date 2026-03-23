@@ -159,20 +159,29 @@ class SammExportService
         foreach ($assessmentStreams as $assessmentStream) {
             $validation = $assessmentStream->getLastValidationStage();
             if ($validation === null) {
-                continue;
+                $evaluation = $assessmentStream->getLastEvaluationStage();
+                $comment = $evaluation?->getComment();
+                if ($comment !== null && $comment !== '') {
+                    $streamCode = $assessmentStream->getStream()->getNameKey();
+
+                    $remarksByStreamCode[$streamCode][] = [
+                        'text' => $comment,
+                        'type' => 'RECOMMENDATION',
+                    ];
+                }
+            } else {
+                $comment = $validation->getComment();
+                if ($comment === null || $comment === '') {
+                    continue;
+                }
+
+                $streamCode = $assessmentStream->getStream()->getNameKey();
+
+                $remarksByStreamCode[$streamCode][] = [
+                    'text' => $comment,
+                    'type' => 'VALIDATION',
+                ];
             }
-
-            $comment = $validation->getComment();
-            if ($comment === null || $comment === '') {
-                continue;
-            }
-
-            $streamCode = $assessmentStream->getStream()->getNameKey();
-
-            $remarksByStreamCode[$streamCode][] = [
-                'text' => $comment,
-                'type' => 'VALIDATION',
-            ];
         }
 
         if (count($remarksByStreamCode) > 0) {
